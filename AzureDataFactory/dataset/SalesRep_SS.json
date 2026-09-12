@@ -1,0 +1,17 @@
+{
+	"name": "SalesRep_SS",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "asql2adls_ls",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "",
+			"table": "SalesRepS_tb"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

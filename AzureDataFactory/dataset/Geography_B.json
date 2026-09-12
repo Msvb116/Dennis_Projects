@@ -1,0 +1,23 @@
+{
+	"name": "Geography_B",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "adls2adf_ls",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": "Geography",
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "Geography.xlsx",
+				"folderPath": "bronze",
+				"fileSystem": "medallian"
+			},
+			"firstRowAsHeader": true
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
