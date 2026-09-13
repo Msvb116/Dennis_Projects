@@ -1,0 +1,16 @@
+{
+	"name": "ProductSales_GG",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "asql2adls_ls",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "",
+			"table": "ProductSalesTrendSQLSink_G_tb"
+		}
+	}
+}

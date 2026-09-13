@@ -1,0 +1,16 @@
+{
+	"name": "DailySales_GG",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "asql2adls_ls",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "",
+			"table": "DailySales_GG_tb"
+		}
+	}
+}

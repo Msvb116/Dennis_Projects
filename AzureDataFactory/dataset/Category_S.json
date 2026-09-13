@@ -10,6 +10,7 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
+				"fileName": "Category_S.csv",
 				"folderPath": "silver",
 				"fileSystem": "medallian"
 			},

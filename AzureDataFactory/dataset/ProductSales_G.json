@@ -1,5 +1,5 @@
 {
-	"name": "SubCategory_S",
+	"name": "ProductSales_G",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "adls2adf_ls",
@@ -10,8 +10,7 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"fileName": "SubCategory_S.csv",
-				"folderPath": "silver",
+				"folderPath": "gold",
 				"fileSystem": "medallian"
 			},
 			"columnDelimiter": ",",
@@ -20,6 +19,5 @@
 			"quoteChar": "\""
 		},
 		"schema": []
-	},
-	"type": "Microsoft.DataFactory/factories/datasets"
+	}
 }

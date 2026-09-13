@@ -1,0 +1,16 @@
+{
+	"name": "denormalizes_G",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "asql2adls_ls",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "",
+			"table": "Dennis_Denormalized_tb"
+		}
+	}
+}
