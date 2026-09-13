@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "dennisadfdev"
+		},
+		"adls2adf_ls_accountKey": {
+			"value": ""
+		},
+		"asql2adls_ls_password": {
+			"value": ""
+		},
+		"blob2adf_ls_connectionString": {
+			"value": ""
+		},
+		"adls2adf_ls_properties_typeProperties_url": {
+			"value": "https://dennisadlsdev.dfs.core.windows.net/"
+		},
+		"asql2adls_ls_properties_typeProperties_server": {
+			"value": "dennismig.database.windows.net"
+		},
+		"asql2adls_ls_properties_typeProperties_database": {
+			"value": "dennisdb"
+		},
+		"asql2adls_ls_properties_typeProperties_userName": {
+			"value": "db_admin"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
