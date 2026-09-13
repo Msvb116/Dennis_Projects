@@ -75,6 +75,20 @@
 						"type": "DatasetReference"
 					},
 					"name": "DailysalesASQLsink"
+				},
+				{
+					"dataset": {
+						"referenceName": "AvgSales_G",
+						"type": "DatasetReference"
+					},
+					"name": "AvgSalesAdlsSink"
+				},
+				{
+					"dataset": {
+						"referenceName": "AvgSalesASQLsink",
+						"type": "DatasetReference"
+					},
+					"name": "AvgSalesASQLsink"
 				}
 			],
 			"transformations": [
@@ -104,6 +118,9 @@
 				},
 				{
 					"name": "DailySales"
+				},
+				{
+					"name": "AvgSalesPerDay"
 				}
 			],
 			"scriptLines": [
@@ -216,6 +233,7 @@
 				"derivedColumn1 derive(GrossProfit = toDouble(TotalRevenue) - toDouble(TotalCost)) ~> derivedColumn2",
 				"derivedColumn2 aggregate(groupBy(Date),",
 				"     DailyRevenue = sum(toDouble(TotalRevenue))) ~> DailySales",
+				"DailySales aggregate(AvgSalesPerDay = avg(DailyRevenue)) ~> AvgSalesPerDay",
 				"derivedColumn2 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     filePattern:'Dennis_Denormalized.csv',",
@@ -253,7 +271,26 @@
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> DailysalesASQLsink"
+				"     errorHandlingOption: 'stopOnFirstError') ~> DailysalesASQLsink",
+				"AvgSalesPerDay sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     filePattern:'AvgSales_G.csv',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> AvgSalesAdlsSink",
+				"AvgSalesPerDay sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> AvgSalesASQLsink"
 			]
 		}
 	}
