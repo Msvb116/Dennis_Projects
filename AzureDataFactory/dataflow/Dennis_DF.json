@@ -1,0 +1,260 @@
+{
+	"name": "Dennis_DF",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Category_S",
+						"type": "DatasetReference"
+					},
+					"name": "Category"
+				},
+				{
+					"dataset": {
+						"referenceName": "Geography_S",
+						"type": "DatasetReference"
+					},
+					"name": "Geography"
+				},
+				{
+					"dataset": {
+						"referenceName": "Product_S",
+						"type": "DatasetReference"
+					},
+					"name": "Product"
+				},
+				{
+					"dataset": {
+						"referenceName": "Sales_S",
+						"type": "DatasetReference"
+					},
+					"name": "Sales"
+				},
+				{
+					"dataset": {
+						"referenceName": "SalesRep_S",
+						"type": "DatasetReference"
+					},
+					"name": "SalesRep"
+				},
+				{
+					"dataset": {
+						"referenceName": "SubCategory_S",
+						"type": "DatasetReference"
+					},
+					"name": "SubCategory"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Dennis_Denormalized_G",
+						"type": "DatasetReference"
+					},
+					"name": "ADLSSink"
+				},
+				{
+					"dataset": {
+						"referenceName": "denormalizes_G",
+						"type": "DatasetReference"
+					},
+					"name": "ASQLSink"
+				},
+				{
+					"dataset": {
+						"referenceName": "DailySales_G",
+						"type": "DatasetReference"
+					},
+					"name": "DailySalesADLSsink"
+				},
+				{
+					"dataset": {
+						"referenceName": "DailySales_GG",
+						"type": "DatasetReference"
+					},
+					"name": "DailysalesASQLsink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "productjoin"
+				},
+				{
+					"name": "subcatjoin"
+				},
+				{
+					"name": "CatJoin"
+				},
+				{
+					"name": "SalesRepJoin"
+				},
+				{
+					"name": "GeoJoin"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "DailySales"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          CategoryKey as short,",
+				"          Category as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Category",
+				"source(output(",
+				"          GeoID as short,",
+				"          Country as string,",
+				"          Town as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Geography",
+				"source(output(",
+				"          ProductID as short,",
+				"          {Sub Category Key} as short,",
+				"          Color as string,",
+				"          ProductName as string,",
+				"          RetailPrice as double,",
+				"          StandardCost as double",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Product",
+				"source(output(",
+				"          fSalesPrimaryKey as integer,",
+				"          ProductID as short,",
+				"          SalesRepID as short,",
+				"          Date as date,",
+				"          Units as short,",
+				"          PercentOfStandardCost as double,",
+				"          RevenueDiscount as double,",
+				"          Country as string,",
+				"          Town as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Sales",
+				"source(output(",
+				"          SalesRepID as short,",
+				"          {Sales Rep Name} as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> SalesRep",
+				"source(output(",
+				"          SubCategoryKey as short,",
+				"          CategoryKey as short,",
+				"          {SubCategory Name} as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> SubCategory",
+				"Sales, Product join(Sales@ProductID == Product@ProductID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> productjoin",
+				"productjoin, SubCategory join({Sub Category Key} == SubCategoryKey,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> subcatjoin",
+				"subcatjoin, Category join(SubCategory@CategoryKey == Category@CategoryKey,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> CatJoin",
+				"CatJoin, SalesRep join(Sales@SalesRepID == SalesRep@SalesRepID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> SalesRepJoin",
+				"SalesRepJoin, Geography join(Sales@Country == Geography@Country",
+				"     && Sales@Town == Geography@Town,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> GeoJoin",
+				"GeoJoin select(mapColumn(",
+				"          fSalesPrimaryKey,",
+				"          ProductID = Sales@ProductID,",
+				"          SalesRepID = Sales@SalesRepID,",
+				"          Date,",
+				"          Units,",
+				"          PercentOfStandardCost,",
+				"          RevenueDiscount,",
+				"          Country = Sales@Country,",
+				"          Town = Sales@Town,",
+				"          Color,",
+				"          ProductName,",
+				"          RetailPrice,",
+				"          StandardCost,",
+				"          SubCategoryKey,",
+				"          SubCategoryName = {SubCategory Name},",
+				"          CategoryKey = Category@CategoryKey,",
+				"          Category,",
+				"          {Sales Rep Name},",
+				"          GeoID",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 derive(TotalRevenue = toDouble(RetailPrice) * toDouble(Units),",
+				"          TotalCost = toDouble(StandardCost) * toDouble(Units)) ~> derivedColumn1",
+				"derivedColumn1 derive(GrossProfit = toDouble(TotalRevenue) - toDouble(TotalCost)) ~> derivedColumn2",
+				"derivedColumn2 aggregate(groupBy(Date),",
+				"     DailyRevenue = sum(toDouble(TotalRevenue))) ~> DailySales",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     filePattern:'Dennis_Denormalized.csv',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> ADLSSink",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> ASQLSink",
+				"DailySales sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     filePattern:'DailySales_G.csv',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> DailySalesADLSsink",
+				"DailySales sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> DailysalesASQLsink"
+			]
+		}
+	}
+}
