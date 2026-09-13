@@ -121,6 +121,15 @@
 				},
 				{
 					"name": "AvgSalesPerDay"
+				},
+				{
+					"name": "ProductDailySales"
+				},
+				{
+					"name": "ProductRevenueWindow"
+				},
+				{
+					"name": "derivedColumn3"
 				}
 			],
 			"scriptLines": [
@@ -234,6 +243,22 @@
 				"derivedColumn2 aggregate(groupBy(Date),",
 				"     DailyRevenue = sum(toDouble(TotalRevenue))) ~> DailySales",
 				"DailySales aggregate(AvgSalesPerDay = avg(DailyRevenue)) ~> AvgSalesPerDay",
+				"derivedColumn2 aggregate(groupBy(ProductID,",
+				"          Date),",
+				"     ProductRevenue = sum(TotalRevenue)) ~> ProductDailySales",
+				"ProductDailySales window(over(ProductID),",
+				"     asc(Date, true),",
+				"     PreviousRevenue = lag(ProductRevenue, 1, 0)) ~> ProductRevenueWindow",
+				"ProductRevenueWindow derive(RevenueChange = toDouble(ProductRevenue) - toDouble(PreviousRevenue),",
+				"          SalesTrend = iif(\r",
+				"    (toDouble(ProductRevenue) - toDouble(PreviousRevenue)) > 0,\r",
+				"    'Increase',\r",
+				"    iif(\r",
+				"        (toDouble(ProductRevenue) - toDouble(PreviousRevenue)) < 0,\r",
+				"        'Drop',\r",
+				"        'No Change'\r",
+				"    )\r",
+				")) ~> derivedColumn3",
 				"derivedColumn2 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     filePattern:'Dennis_Denormalized.csv',",
