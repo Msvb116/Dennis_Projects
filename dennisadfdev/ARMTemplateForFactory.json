@@ -438,6 +438,89 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/DennisE2E_PL')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Raw2Bronze",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Raw2Bronze_PL",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Bronze2Silver",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Raw2Bronze",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Bronze2Silver_PL",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Silver2Gold",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Bronze2Silver",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Silver2Gold_PL",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Raw2Bronze_PL')]",
+				"[concat(variables('factoryId'), '/pipelines/Bronze2Silver_PL')]",
+				"[concat(variables('factoryId'), '/pipelines/Silver2Gold_PL')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Raw2Bronze_PL')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
