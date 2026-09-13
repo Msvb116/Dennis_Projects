@@ -89,6 +89,20 @@
 						"type": "DatasetReference"
 					},
 					"name": "AvgSalesASQLsink"
+				},
+				{
+					"dataset": {
+						"referenceName": "ProductSales_G",
+						"type": "DatasetReference"
+					},
+					"name": "ProductSalesTrendADLSSink"
+				},
+				{
+					"dataset": {
+						"referenceName": "ProductSales_GG",
+						"type": "DatasetReference"
+					},
+					"name": "ProductSalesTrendSQLSink"
 				}
 			],
 			"transformations": [
@@ -315,7 +329,26 @@
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> AvgSalesASQLsink"
+				"     errorHandlingOption: 'stopOnFirstError') ~> AvgSalesASQLsink",
+				"derivedColumn3 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     filePattern:'ProductSalesTrend_G.csv',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> ProductSalesTrendADLSSink",
+				"derivedColumn3 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> ProductSalesTrendSQLSink"
 			]
 		}
 	}
