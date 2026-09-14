@@ -1,0 +1,100 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'windows-latest'
+
+stages:
+
+# ============================================
+# STAGE 1: Build
+# ============================================
+- stage: Build
+  displayName: "Build Stage"
+
+  jobs:
+  - job: PublishRepo
+    displayName: "Checkout Repo"
+    steps:
+    - checkout: self
+
+    - script: |
+        echo "===== FILES IN REPO ROOT ====="
+        dir "$(Build.SourcesDirectory)"
+      displayName: "DEBUG: List Root Files"
+
+
+# ============================================
+# STAGE 2: Deploy to UAT
+# ============================================
+- stage: Deploy_UAT
+  displayName: "Deploy to UAT"
+  dependsOn: Build
+
+  jobs:
+  - job: DeployADF_UAT
+    displayName: "Deploy ARM to UAT ADF"
+
+    steps:
+    - checkout: self
+
+    - task: AzureResourceGroupDeployment@2
+      displayName: "Deploy ARM Template to UAT Data Factory"
+      inputs:
+        azureSubscription: "DEVUATPRODConn"
+        action: "Create Or Update Resource Group"
+        resourceGroupName: "mde-uat-rg"
+        location: "East US"
+
+        templateLocation: "Linked artifact"
+
+        csmFile: "$(Build.SourcesDirectory)/ARMTemplateForFactory.json"
+        csmParametersFile: "$(Build.SourcesDirectory)/ARMTemplateParametersForFactory.json"
+
+        overrideParameters: >
+          -factoryName "dennisadfUAT"
+          -adls2adf_ls_accountKey "$(uat_adls_account_key)"
+          -adls2adf_ls_properties_typeProperties_url "https://dennisadlsuat.dfs.core.windows.net/"
+          -blob2adf_ls_accountKey "$(uat_blob_account_key)"
+          -blob2adf_ls_properties_typeProperties_url "https://dennisblobuat.blob.core.windows.net/"
+
+        deploymentMode: Incremental
+
+
+# ============================================
+# STAGE 3: Deploy to PROD
+# ============================================
+- stage: Deploy_PROD
+  displayName: "Deploy to PROD"
+  dependsOn: Deploy_UAT
+
+  jobs:
+  - job: DeployADF_PROD
+    displayName: "Deploy ARM to PROD Data Factory"
+
+    steps:
+    - checkout: self
+
+    - task: AzureResourceGroupDeployment@2
+      displayName: "Deploy ARM Template to PROD Data Factory"
+      inputs:
+        azureSubscription: "DEVUATPRODConn"
+        action: "Create Or Update Resource Group"
+        resourceGroupName: "mde-prod-rg"
+        location: "East US"
+
+        templateLocation: "Linked artifact"
+
+        csmFile: "$(Build.SourcesDirectory)/ARMTemplateForFactory.json"
+        csmParametersFile: "$(Build.SourcesDirectory)/ARMTemplateParametersForFactory.json"
+
+        overrideParameters: >
+          -factoryName "dennisadfPROD"
+          -adls2adf_ls_accountKey "$(prod_adls_account_key)"
+          -adls2adf_ls_properties_typeProperties_url "https://dennisadlsprod.dfs.core.windows.net/"
+          -blob2adf_ls_accountKey "$(prod_blob_account_key)"
+          -blob2adf_ls_properties_typeProperties_url "https://dennisblobprod.blob.core.windows.net/"
+
+        deploymentMode: Incremental
