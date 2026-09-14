@@ -103,6 +103,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "ProductSalesTrendSQLSink"
+				},
+				{
+					"dataset": {
+						"referenceName": "SalesVolumen_G",
+						"type": "DatasetReference"
+					},
+					"name": "SalesVolumenSink"
 				}
 			],
 			"transformations": [
@@ -144,6 +151,12 @@
 				},
 				{
 					"name": "derivedColumn3"
+				},
+				{
+					"name": "SalesVolumeCategory"
+				},
+				{
+					"name": "select2"
 				}
 			],
 			"scriptLines": [
@@ -273,6 +286,34 @@
 				"        'No Change'\r",
 				"    )\r",
 				")) ~> derivedColumn3",
+				"derivedColumn2 derive(SalesVolumeCategory = iif(     Units >= 100,     'High',     iif(         Units >= 50,         'Medium',         'Low'     ) )) ~> SalesVolumeCategory",
+				"SalesVolumeCategory select(mapColumn(",
+				"          fSalesPrimaryKey,",
+				"          ProductID,",
+				"          SalesRepID,",
+				"          Date,",
+				"          Units,",
+				"          PercentOfStandardCost,",
+				"          RevenueDiscount,",
+				"          Country,",
+				"          Town,",
+				"          Color,",
+				"          ProductName,",
+				"          RetailPrice,",
+				"          StandardCost,",
+				"          SubCategoryKey,",
+				"          SubCategoryName,",
+				"          CategoryKey,",
+				"          Category,",
+				"          {Sales Rep Name},",
+				"          GeoID,",
+				"          TotalRevenue,",
+				"          TotalCost,",
+				"          GrossProfit,",
+				"          SalesVolumeCategory",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
 				"derivedColumn2 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     filePattern:'Dennis_Denormalized.csv',",
@@ -348,7 +389,19 @@
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> ProductSalesTrendSQLSink"
+				"     errorHandlingOption: 'stopOnFirstError') ~> ProductSalesTrendSQLSink",
+				"select2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          AvgSalesPerDay as string",
+				"     ),",
+				"     filePattern:'SalesVolumen_G.csv',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> SalesVolumenSink"
 			]
 		}
 	}
