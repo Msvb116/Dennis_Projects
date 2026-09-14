@@ -609,7 +609,8 @@
 									"AvgSalesAdlsSink": {},
 									"AvgSalesASQLsink": {},
 									"ProductSalesTrendADLSSink": {},
-									"ProductSalesTrendSQLSink": {}
+									"ProductSalesTrendSQLSink": {},
+									"SalesVolumenSink": {}
 								}
 							},
 							"staging": {},
@@ -1316,6 +1317,39 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/SalesVolumen_G')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "adls2adf_ls",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "gold",
+						"fileSystem": "medallian"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "AvgSalesPerDay",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/adls2adf_ls')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Sales_B')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -1773,6 +1807,13 @@
 								"type": "DatasetReference"
 							},
 							"name": "ProductSalesTrendSQLSink"
+						},
+						{
+							"dataset": {
+								"referenceName": "SalesVolumen_G",
+								"type": "DatasetReference"
+							},
+							"name": "SalesVolumenSink"
 						}
 					],
 					"transformations": [
@@ -1814,6 +1855,12 @@
 						},
 						{
 							"name": "derivedColumn3"
+						},
+						{
+							"name": "SalesVolumeCategory"
+						},
+						{
+							"name": "select2"
 						}
 					],
 					"scriptLines": [
@@ -1943,6 +1990,34 @@
 						"        'No Change'\r",
 						"    )\r",
 						")) ~> derivedColumn3",
+						"derivedColumn2 derive(SalesVolumeCategory = iif(     Units >= 100,     'High',     iif(         Units >= 50,         'Medium',         'Low'     ) )) ~> SalesVolumeCategory",
+						"SalesVolumeCategory select(mapColumn(",
+						"          fSalesPrimaryKey,",
+						"          ProductID,",
+						"          SalesRepID,",
+						"          Date,",
+						"          Units,",
+						"          PercentOfStandardCost,",
+						"          RevenueDiscount,",
+						"          Country,",
+						"          Town,",
+						"          Color,",
+						"          ProductName,",
+						"          RetailPrice,",
+						"          StandardCost,",
+						"          SubCategoryKey,",
+						"          SubCategoryName,",
+						"          CategoryKey,",
+						"          Category,",
+						"          {Sales Rep Name},",
+						"          GeoID,",
+						"          TotalRevenue,",
+						"          TotalCost,",
+						"          GrossProfit,",
+						"          SalesVolumeCategory",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select2",
 						"derivedColumn2 sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     filePattern:'Dennis_Denormalized.csv',",
@@ -2018,7 +2093,19 @@
 						"     format: 'table',",
 						"     skipDuplicateMapInputs: true,",
 						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError') ~> ProductSalesTrendSQLSink"
+						"     errorHandlingOption: 'stopOnFirstError') ~> ProductSalesTrendSQLSink",
+						"select2 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          AvgSalesPerDay as string",
+						"     ),",
+						"     filePattern:'SalesVolumen_G.csv',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> SalesVolumenSink"
 					]
 				}
 			},
@@ -2036,7 +2123,8 @@
 				"[concat(variables('factoryId'), '/datasets/AvgSales_G')]",
 				"[concat(variables('factoryId'), '/datasets/AvgSalesASQLsink')]",
 				"[concat(variables('factoryId'), '/datasets/ProductSales_G')]",
-				"[concat(variables('factoryId'), '/datasets/ProductSales_GG')]"
+				"[concat(variables('factoryId'), '/datasets/ProductSales_GG')]",
+				"[concat(variables('factoryId'), '/datasets/SalesVolumen_G')]"
 			]
 		},
 		{

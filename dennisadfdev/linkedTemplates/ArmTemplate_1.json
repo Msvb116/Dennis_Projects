@@ -193,6 +193,37 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/SalesVolumen_G')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "adls2adf_ls",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "gold",
+						"fileSystem": "medallian"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "AvgSalesPerDay",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Sales_B')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -731,6 +762,13 @@
 								"type": "DatasetReference"
 							},
 							"name": "ProductSalesTrendSQLSink"
+						},
+						{
+							"dataset": {
+								"referenceName": "SalesVolumen_G",
+								"type": "DatasetReference"
+							},
+							"name": "SalesVolumenSink"
 						}
 					],
 					"transformations": [
@@ -772,6 +810,12 @@
 						},
 						{
 							"name": "derivedColumn3"
+						},
+						{
+							"name": "SalesVolumeCategory"
+						},
+						{
+							"name": "select2"
 						}
 					],
 					"scriptLines": [
@@ -901,6 +945,34 @@
 						"        'No Change'\r",
 						"    )\r",
 						")) ~> derivedColumn3",
+						"derivedColumn2 derive(SalesVolumeCategory = iif(     Units >= 100,     'High',     iif(         Units >= 50,         'Medium',         'Low'     ) )) ~> SalesVolumeCategory",
+						"SalesVolumeCategory select(mapColumn(",
+						"          fSalesPrimaryKey,",
+						"          ProductID,",
+						"          SalesRepID,",
+						"          Date,",
+						"          Units,",
+						"          PercentOfStandardCost,",
+						"          RevenueDiscount,",
+						"          Country,",
+						"          Town,",
+						"          Color,",
+						"          ProductName,",
+						"          RetailPrice,",
+						"          StandardCost,",
+						"          SubCategoryKey,",
+						"          SubCategoryName,",
+						"          CategoryKey,",
+						"          Category,",
+						"          {Sales Rep Name},",
+						"          GeoID,",
+						"          TotalRevenue,",
+						"          TotalCost,",
+						"          GrossProfit,",
+						"          SalesVolumeCategory",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select2",
 						"derivedColumn2 sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     filePattern:'Dennis_Denormalized.csv',",
@@ -976,7 +1048,19 @@
 						"     format: 'table',",
 						"     skipDuplicateMapInputs: true,",
 						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError') ~> ProductSalesTrendSQLSink"
+						"     errorHandlingOption: 'stopOnFirstError') ~> ProductSalesTrendSQLSink",
+						"select2 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          AvgSalesPerDay as string",
+						"     ),",
+						"     filePattern:'SalesVolumen_G.csv',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> SalesVolumenSink"
 					]
 				}
 			},
@@ -985,7 +1069,8 @@
 				"[concat(variables('factoryId'), '/datasets/Sales_S')]",
 				"[concat(variables('factoryId'), '/datasets/SalesRep_S')]",
 				"[concat(variables('factoryId'), '/datasets/SubCategory_S')]",
-				"[concat(variables('factoryId'), '/datasets/denormalizes_G')]"
+				"[concat(variables('factoryId'), '/datasets/denormalizes_G')]",
+				"[concat(variables('factoryId'), '/datasets/SalesVolumen_G')]"
 			]
 		},
 		{
@@ -1173,80 +1258,6 @@
 				"[concat(variables('factoryId'), '/datasets/Product_B')]",
 				"[concat(variables('factoryId'), '/datasets/Product_S')]",
 				"[concat(variables('factoryId'), '/datasets/Product_SS')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/SalesRep_DF')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "SalesRep_B",
-								"type": "DatasetReference"
-							},
-							"name": "source1"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "SalesRep_S",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						},
-						{
-							"dataset": {
-								"referenceName": "SalesRep_SS",
-								"type": "DatasetReference"
-							},
-							"name": "sink2"
-						}
-					],
-					"transformations": [
-						{
-							"name": "derivedColumn1"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          SalesRepID as string,",
-						"          {Sales Rep Name} as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> source1",
-						"source1 derive(SalesRepID = toInteger(replace(trim(SalesRepID), 'ID - ', ''))) ~> derivedColumn1",
-						"derivedColumn1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     filePattern:'SalesRep_S.csv',",
-						"     umask: 0022,",
-						"     preCommands: [],",
-						"     postCommands: [],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     partitionBy('hash', 1)) ~> sink1",
-						"derivedColumn1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     deletable:false,",
-						"     insertable:true,",
-						"     updateable:false,",
-						"     upsertable:false,",
-						"     format: 'table',",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError') ~> sink2"
-					]
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/SalesRep_B')]",
-				"[concat(variables('factoryId'), '/datasets/SalesRep_S')]",
-				"[concat(variables('factoryId'), '/datasets/SalesRep_SS')]"
 			]
 		}
 	]
